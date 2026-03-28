@@ -52,8 +52,9 @@ def preprocess_pipeline(filepath: str, window_size=60, step=30, scaler_path='sav
         for m_type in m_types:
             mask = df['machine_type_encoded'] == m_type
             scaler = RobustScaler()
-            # Scale features
-            scaled_vals = scaler.fit_transform(df.loc[mask, feature_cols])
+            # Ensure features are float32 before scaling to prevent dtype warnings/errors
+            subset = df.loc[mask, feature_cols].astype('float32')
+            scaled_vals = scaler.fit_transform(subset)
             # Handle possible IQR division by 0 causing infinity or NaNs
             scaled_vals = np.nan_to_num(scaled_vals, nan=0.0, posinf=10.0, neginf=-10.0)
             df.loc[mask, feature_cols] = scaled_vals

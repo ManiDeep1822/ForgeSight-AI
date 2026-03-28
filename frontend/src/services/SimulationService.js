@@ -51,3 +51,44 @@ export const generateWindow = (length = 60) => {
         return base;
     });
 };
+
+/**
+ * Generates an extreme data window to test model failure detection.
+ */
+export const generateAnomalousWindow = (length = 60, severity = 1.0) => {
+    return Array.from({ length }, (_, i) => {
+        // Create 43 features
+        const features = Array.from({ length: 43 }, () => Math.random() * 0.2);
+        
+        // Inject extreme failure patterns (Normalized 0-1):
+        // Index 0: Temperature (Critical level)
+        features[0] = 0.98 + (Math.random() * 0.02 * severity);
+        
+        // Index 1: Torque (Maximum oscillation)
+        features[1] = 0.8 + (Math.sin(i / 1.0) * 0.2 * severity);
+        
+        // Index 2: Tool Wear (Maximum failure state)
+        features[2] = 0.9 + (i / length) * severity * 0.1;
+        if (features[2] > 1.0) features[2] = 1.0;
+        
+        // Index 3: Spindle Speed (Deep drops and spikes)
+        features[3] = 0.2 + (Math.random() * 0.8 * severity);
+        
+        // Injecting failures into air/process temperature and rotation (indices 4-9)
+        for (let j = 4; j < 10; j++) {
+            features[j] = 0.85 + (Math.random() * 0.15 * severity);
+        }
+
+        // Fill rolling means (Indices 10-25) with high variability
+        for (let j = 10; j < 25; j++) {
+            features[j] = 0.7 + (Math.random() * 0.3 * severity);
+        }
+        
+        // Features 26-42: High frequency vibration and derived metrics
+        for (let j = 26; j < 43; j++) {
+            features[j] = 0.8 + (Math.random() * 0.2 * severity);
+        }
+        
+        return features;
+    });
+};

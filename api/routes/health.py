@@ -3,6 +3,8 @@ from pydantic import BaseModel
 from api.schemas.outputs import HealthResponse
 from models.health_index.scorer import compute_health_index
 
+from api.utils import sanitize_float
+
 router = APIRouter(prefix="/health", tags=["M5: Health Index"])
 
 class HealthInput(BaseModel):
@@ -27,8 +29,9 @@ async def score_health(data: HealthInput):
         elif hi < 60: status = "Fair"
         elif hi < 80: status = "Good"
             
+        hi_clean = sanitize_float(hi)
         return HealthResponse(
-            health_index=hi,
+            health_index=hi_clean,
             status=status
         )
     except Exception as e:

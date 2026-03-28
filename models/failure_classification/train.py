@@ -69,7 +69,7 @@ def train_classification_model():
     # Model has Softmax at the end, so we use NLLLoss with torch.log for numerical stability
     # equivalent to CrossEntropyLoss on raw logits
     criterion = nn.NLLLoss(weight=class_weights_t)
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = optim.Adam(model.parameters(), lr=5e-4) # Safer LR for small failure subset
     epochs = 60
     
     print("Beginning Training: Model M3 (Failure Classification)")
@@ -79,10 +79,14 @@ def train_classification_model():
         for batch_x, batch_y in train_loader:
             optimizer.zero_grad()
             probs = model(batch_x)
-            # Add eps to avoid log(0)
-            log_probs = torch.log(probs + 1e-7)
+            # Add eps to avoid log(0) and clamp to avoid extreme log values
+            log_probs = torch.log(probs.clamp(min=1e-7, max=1.0))
             loss = criterion(log_probs, batch_y)
             loss.backward()
+            
+            # Clip gradients
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            
             optimizer.step()
             train_loss += loss.item() * batch_x.size(0)
             

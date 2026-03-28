@@ -49,7 +49,7 @@ def train_anomaly_model():
     input_size = X_train.shape[2]
     model = LSTMAutoencoder(input_size=input_size, hidden=64, num_layers=2)
     criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = optim.Adam(model.parameters(), lr=5e-4)
     epochs = 50
     
     print("Beginning Training: Model M1 (Anomaly Detection)")
@@ -61,6 +61,10 @@ def train_anomaly_model():
             outputs = model(batch_x)
             loss = criterion(outputs, batch_y)
             loss.backward()
+            
+            # Clip gradients to prevent inf/nan loss
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            
             optimizer.step()
             train_loss += loss.item() * batch_x.size(0)
         

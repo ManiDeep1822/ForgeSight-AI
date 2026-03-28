@@ -2,6 +2,10 @@ import shap
 import torch
 import asyncio
 import numpy as np
+import math
+
+# Use the same sanitize helper for consistency
+from api.utils import sanitize_float
 
 # Cache results keyed by input hash
 _SHAP_CACHE = {}
@@ -29,10 +33,19 @@ def compute_shap_sync(input_tensor: torch.Tensor, model: torch.nn.Module, bg_ten
         else:
             mean_abs_shap = np.abs(shap_vals)
             
+        # Ensure we have a 1D array of feature importance scores
+        # We need to reach (num_features,)
+        if hasattr(mean_abs_shap, 'ravel'):
+            mean_abs_shap = mean_abs_shap.ravel()
+            
         if feature_names is None or len(feature_names) != len(mean_abs_shap):
             feature_names = [f"Feature_{i}" for i in range(len(mean_abs_shap))]
             
-        importance_dict = {name: float(val) for name, val in zip(feature_names, mean_abs_shap)}
+        # Explicitly convert each value to a Python float and sanitize
+        importance_dict = {
+            str(name): sanitize_float(val) 
+            for name, val in zip(feature_names, mean_abs_shap)
+        }
         sorted_importance = dict(sorted(importance_dict.items(), key=lambda item: item[1], reverse=True))
         
         return sorted_importance

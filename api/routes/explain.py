@@ -5,7 +5,8 @@ import torch
 from api.schemas.inputs import SensorWindow
 from api.schemas.outputs import SHAPResponse
 from models.explainability.shap_layer import explain_async
-import api.main as main
+import api.state as state
+from api.utils import sanitize_dict
 
 router = APIRouter(prefix="/explain", tags=["M8: Explainability"])
 
@@ -27,18 +28,18 @@ FEAT_NAMES = [
 
 @router.post("/", response_model=SHAPResponse)
 async def get_explanation(data: SensorWindow):
-    model = main.models.get('failure') # Explain the failure predictor usually
+    model = state.models.get('failure') # Explain the failure predictor usually
     
     if not model:
         raise HTTPException(status_code=500, detail="Models not loaded")
         
     try:
         # shape: (1, 60, features)
-        input_tensor = torch.tensor([data.window], dtype=torch.float32)
+        input_tensor = torch.tensor([data.window], dtype=torch.float32).to(state.device)
         
         # bg_tensor should ideally be drawn from training set, 
         # using zeros as a fast fallback surrogate for API real-time requirement
-        bg_tensor = torch.zeros((10, 60, main.GLOBAL_FEATURE_NUM), dtype=torch.float32)
+        bg_tensor = torch.zeros((10, 60, state.GLOBAL_FEATURE_NUM), dtype=torch.float32).to(state.device)
         
         result = await explain_async(input_tensor, model, bg_tensor, feature_names=FEAT_NAMES)
         
@@ -47,8 +48,10 @@ async def get_explanation(data: SensorWindow):
             
         cached = result.pop("cached", False)
         
+        sanitized_result = sanitize_dict(result)
+        
         return SHAPResponse(
-            feature_importance=result,
+            feature_importance=sanitized_result,
             cached=cached
         )
     except Exception as e:

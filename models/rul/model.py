@@ -29,19 +29,36 @@ class TransformerRUL(nn.Module):
         super(TransformerRUL, self).__init__()
         
         self.input_projection = nn.Linear(input_size, d_model)
+        self.norm1 = nn.LayerNorm(d_model)
         self.pos_encoder = PositionalEncoding(d_model=d_model)
         
         # PyTorch TransformerEncoderLayer inherently uses batch_first=True to align inputs comfortably
-        encoder_layers = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True)
+        encoder_layers = nn.TransformerEncoderLayer(
+            d_model=d_model, 
+            nhead=nhead, 
+            dropout=dropout, 
+            batch_first=True,
+            norm_first=True # More stable for deeper models
+        )
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers=num_layers)
         
         self.fc1 = nn.Linear(d_model, 32)
+        self.norm2 = nn.LayerNorm(32)
         self.relu = nn.ReLU()
         self.fc2 = nn.Linear(32, 1)
         
+        # Xavier Initialization for better stability
+        self._init_weights()
+
+    def _init_weights(self):
+        for p in self.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
+
     def forward(self, x):
         # x is (batch_size, seq_len, input_size)
         x = self.input_projection(x) # (batch_size, seq_len, d_model)
+        x = self.norm1(x)
         x = self.pos_encoder(x)
         
         x = self.transformer_encoder(x) # (batch_size, seq_len, d_model)
@@ -50,6 +67,7 @@ class TransformerRUL(nn.Module):
         x = torch.mean(x, dim=1) # (batch_size, d_model)
         
         x = self.fc1(x)
+        x = self.norm2(x)
         x = self.relu(x)
         out = self.fc2(x) # (batch_size, 1)
         

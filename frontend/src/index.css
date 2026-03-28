@@ -1,18 +1,38 @@
-@import "tailwindcss";
-
-@theme {
+:root {
   --color-foreground: #ffffff;
-  --color-background-base: #0f172a;
-  --color-background-panel: #1e293b;
+  --color-background-base: #050508;
+  --color-background-panel: #0d0d12;
+  --color-background-accent: #09090f;
   --color-brand-primary: #3b82f6;
-  --color-brand-secondary: #0ea5e9;
+  --color-brand-secondary: #6366f1;
   --color-status-healthy: #10b981;
   --color-status-warning: #f59e0b;
   --color-status-critical: #ef4444;
 }
 
-body {
-    background-color: var(--color-background-base);
-    color: var(--color-foreground);
-    @apply antialiased min-h-screen font-sans;
+@import "tailwindcss";
+
+@theme {
+  --color-foreground: var(--color-foreground);
+  --color-background-base: var(--color-background-base);
+  --color-background-panel: var(--color-background-panel);
+  --color-background-accent: var(--color-background-accent);
+  --color-brand-primary: var(--color-brand-primary);
+  --color-brand-secondary: var(--color-brand-secondary);
+  --color-status-healthy: var(--color-status-healthy);
+  --color-status-warning: var(--color-status-warning);
+  --color-status-critical: var(--color-status-critical);
+  
+  --shadow-glow-blue: 0 0 25px rgba(59, 130, 246, 0.4);
+  --shadow-glow-green: 0 0 20px rgba(16, 185, 129, 0.4);
+  --shadow-glow-red: 0 0 25px rgba(239, 68, 68, 0.4);
+}
+
+@layer base {
+  button, 
+  [role="button"],
+  .tactical-border {
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
 }

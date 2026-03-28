@@ -44,7 +44,7 @@ def train_failure_model():
     input_size = X_train.shape[2]
     model = LSTMClassifier(input_size=input_size, hidden=128, num_layers=2, dropout=0.3)
     criterion = FocalLoss(alpha=0.25, gamma=2.0)
-    optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
+    optimizer = optim.Adam(model.parameters(), lr=5e-4, weight_decay=1e-5)
     epochs = 80
     
     print("Beginning Training: Model M2 (Failure Prediction)")
@@ -56,6 +56,10 @@ def train_failure_model():
             outputs = model(batch_x)
             loss = criterion(outputs, batch_y)
             loss.backward()
+            
+            # Clip gradients
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            
             optimizer.step()
             train_loss += loss.item() * batch_x.size(0)
             

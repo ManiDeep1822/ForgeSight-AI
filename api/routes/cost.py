@@ -2,13 +2,14 @@ from fastapi import APIRouter, HTTPException
 import numpy as np
 from api.schemas.inputs import CostInput
 from api.schemas.outputs import CostResponse
-import api.main as main
+import api.state as state
+from api.utils import sanitize_float
 
 router = APIRouter(prefix="/cost", tags=["M6: Cost Estimation"])
 
 @router.post("/estimate", response_model=CostResponse)
 async def estimate_cost(data: CostInput):
-    model = main.models.get('cost')
+    model = state.models.get('cost')
     
     # Fallback if model missing
     if not model:
@@ -30,8 +31,9 @@ async def estimate_cost(data: CostInput):
         
         cost = model.predict(x_input)[0]
         
+        cost_clean = sanitize_float(cost)
         return CostResponse(
-            estimated_cost=float(max(0.0, cost)),
+            estimated_cost=float(max(0.0, cost_clean)),
             currency="USD"
         )
     except Exception as e:
